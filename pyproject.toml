@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "xenon-qai"
+version = "0.1.0"
+description = "Quantum-Augmented Intelligence for Dark Matter Detection in XENON Experiments"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "XENON-QAI Contributors" }
+]
+keywords = ["dark matter", "quantum machine learning", "xenon", "particle physics", "deep learning"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "pandas>=2.0",
+  "scikit-learn>=1.3",
+  "torch>=2.1",
+  "torch-geometric>=2.4",
+  "qiskit>=1.0",
+  "qiskit-machine-learning>=0.7",
+  "pennylane>=0.35",
+  "xgboost>=2.0",
+  "matplotlib>=3.7",
+  "seaborn>=0.13",
+  "plotly>=5.18",
+  "umap-learn>=0.5",
+  "shap>=0.44",
+  "pyyaml>=6.0",
+  "hydra-core>=1.3",
+  "tqdm>=4.66",
+  "rich>=13.0",
+  "wandb>=0.16",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+  "black>=23.0",
+  "ruff>=0.1",
+  "mypy>=1.6",
+  "pre-commit>=3.5",
+  "ipykernel>=6.26",
+  "jupyterlab>=4.0",
+]
+
+[project.scripts]
+xenon-train    = "xenon_qai.scripts.train:main"
+xenon-evaluate = "xenon_qai.scripts.evaluate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-v --cov=xenon_qai --cov-report=term-missing"
