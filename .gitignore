@@ -18,11 +18,15 @@ ENV/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Data (never commit raw/processed data)
+# Data (never commit raw/processed data, archives, or extracted sets)
+data/*
+!data/.gitkeep
+!data/README.md
 data/raw/
 data/processed/
 data/interim/
 data/external/
+data/extracted/
 *.h5
 *.hdf5
 *.npz
@@ -30,6 +34,15 @@ data/external/
 *.csv
 *.parquet
 *.root
+*.tar
+*.tar.gz
+*.tar.xz
+*.tar.bz2
+*.zip
+*.7z
+*.rar
+*.dat
+*.bin
 
 # Results & checkpoints (large binaries)
 results/checkpoints/*.pt
@@ -69,3 +82,5 @@ terminal.txt
 
 plan.txt
 working.txt
+antigravity.txt
+dataanalysis.txt

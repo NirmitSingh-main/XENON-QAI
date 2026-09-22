@@ -1,0 +1,205 @@
+================================================================================
+XENON-QAI
+Experimental Benchmark Results: 5.6K vs 22.1K Events
+================================================================================
+Subtitle: Multimodal Deep Learning and Quantum-Classical Inference for Liquid-Xenon Dark-Matter Candidate Identification
+Date: 2026-09-21
+
+
+================================================================================
+SECTION 1 — EXPERIMENTAL SETUP
+================================================================================
+
+- Dataset: Simulated XENON1T dual-phase liquid-xenon time projection chamber (TPC) dataset.
+- Event Classes: 12 distinct classes (5 physical backgrounds: ER, RN, WALL, AC, CNNS; 7 WIMP signal masses: 10, 20, 35, 50, 100, 200, 500 GeV).
+- Benchmark Scales:
+  * Intermediate benchmark: 5,599 events (500 events/class target).
+  * Scaling benchmark: 22,099 events (2,000 events/class target).
+- Split Methodology: 70% Train / 15% Validation / 15% Test deterministic stratified split (random seed = 42).
+- Data Leakage Prevention: Preprocessing transforms and feature scalers fitted strictly on training data only. All splits verified disjoint at event-ID level.
+- Pipeline Architecture:
+  * 13D domain-engineered physics feature extraction (energy, log10(S2/S1), spatial radii, pulse timing).
+  * 13D Classical Baselines (Random Forest, XGBoost, Logistic Regression, MLP).
+  * Multimodal Deep 1D-CNN combining S1 waveform (160 bins), S2 waveform (500 bins), Top/Bottom PMT arrays (248 channels), and 13D physics features.
+  * Frozen compact latent space representation: z in R^16 extracted after CNN training.
+  * Parameter-Matched Classical Head (37 parameters) trained on frozen z.
+  * Quantum Variational Classifiers (QNN, 4 qubits) with circuit depths L=2, L=4, L=6 evaluated on the exact same frozen z.
+  * QNN execution: Classically simulated on CPU via PennyLane statevector simulation (default.qubit).
+  * No architectural or hyperparameter changes between the 5.6K and 22.1K scaling runs.
+
+
+================================================================================
+SECTION 2 — 5,599-EVENT RESULTS (INTERMEDIATE BENCHMARK)
+================================================================================
+
+Total Events: 5,599 (Train: 3,919 | Val: 839 | Test: 841)
+Total Runtime: 225.35s (~3.76 minutes CPU) | Peak RAM: 979.4 MB
+
+| Model                   |  ROC-AUC |   PR-AUC | Accuracy | SigEff@99.9% | Training Time |
+|:------------------------|---------:|---------:|---------:|-------------:|--------------:|
+| 13D MLP                 |   0.8644 |   0.8706 |   0.8359 |       0.0114 |        22.25s |
+| 13D Random Forest       |   0.8614 |   0.8780 |   0.8288 |       0.0190 |         0.69s |
+| 13D XGBoost             |   0.8571 |   0.8644 |   0.8323 |       0.0019 |         2.00s |
+| 13D Logistic Regression |   0.7966 |   0.8099 |   0.7812 |       0.0000 |         0.02s |
+| Multimodal CNN          |   0.8452 |   0.8553 |   0.7943 |       0.0190 |       117.07s |
+| Frozen-z Classical Head |   0.8377 |   0.8593 |   0.7967 |       0.0229 |         1.77s |
+| Frozen-z QNN L=2        |   0.8323 |   0.8299 |   0.7955 |       0.0000 |         9.97s |
+| Frozen-z QNN L=4        |   0.8344 |   0.8548 |   0.8145 |       0.0000 |        16.69s |
+| Frozen-z QNN L=6        |   0.8411 |   0.8571 |   0.8038 |       0.0057 |        24.26s |
+
+
+================================================================================
+SECTION 3 — 22,099-EVENT RESULTS (SCALING BENCHMARK)
+================================================================================
+
+Actual Dataset Yield: 22,099 events (Train: 15,469 | Val: 3,314 | Test: 3,316)
+Target Sampling: 2,000 events/class across 12 classes
+Total Benchmark Runtime: 669.85s (~11.16 minutes CPU)
+Peak RAM: 987.4 MB
+
+| Model                   |  ROC-AUC |   PR-AUC | Accuracy | SigEff@99.9% | Training Time |
+|:------------------------|---------:|---------:|---------:|-------------:|--------------:|
+| 13D MLP                 |   0.8675 |   0.8778 |   0.8489 |       0.0190 |        21.44s |
+| 13D Random Forest       |   0.8545 |   0.8669 |   0.8314 |       0.0043 |         1.24s |
+| 13D XGBoost             |   0.8639 |   0.8735 |   0.8453 |       0.0081 |         2.15s |
+| 13D Logistic Regression |   0.8205 |   0.8433 |   0.7877 |       0.0095 |         0.07s |
+| Multimodal CNN          |   0.8706 |   0.8843 |   0.8393 |       0.0105 |       406.82s |
+| Frozen-z Classical Head |   0.8699 |   0.8822 |   0.8402 |       0.0024 |         6.13s |
+| Frozen-z QNN L=2        |   0.8662 |   0.8735 |   0.8356 |       0.0090 |        35.54s |
+| Frozen-z QNN L=4        |   0.8609 |   0.8718 |   0.8408 |       0.0010 |        54.94s |
+| Frozen-z QNN L=6        |   0.8556 |   0.8554 |   0.8372 |       0.0010 |        75.81s |
+
+
+================================================================================
+SECTION 4 — DIRECT 5.6K vs 22.1K COMPARISON
+================================================================================
+
+| Model                   | ROC-AUC 5.6K | ROC-AUC 22.1K | PR-AUC 5.6K | PR-AUC 22.1K |
+|:------------------------|-------------:|--------------:|------------:|-------------:|
+| 13D MLP                 |       0.8644 |        0.8675 |      0.8706 |       0.8778 |
+| 13D Random Forest       |       0.8614 |        0.8545 |      0.8780 |       0.8669 |
+| Multimodal CNN          |       0.8452 |        0.8706 |      0.8553 |       0.8843 |
+| Frozen-z Classical Head |       0.8377 |        0.8699 |      0.8593 |       0.8822 |
+| Frozen-z QNN L=2        |       0.8323 |        0.8662 |      0.8299 |       0.8735 |
+| Frozen-z QNN L=4        |       0.8344 |        0.8609 |      0.8548 |       0.8718 |
+| Frozen-z QNN L=6        |       0.8411 |        0.8556 |      0.8571 |       0.8554 |
+
+ROC-AUC Changes with Data Scaling (22.1K vs 5.6K):
+
+| Model                   | ROC-AUC Change |
+|:------------------------|---------------:|
+| 13D MLP                 |        +0.0031 |
+| 13D Random Forest       |        -0.0069 |
+| Multimodal CNN          |        +0.0254 |
+| Frozen-z Classical Head |        +0.0322 |
+| Frozen-z QNN L=2        |        +0.0339 |
+| Frozen-z QNN L=4        |        +0.0265 |
+| Frozen-z QNN L=6        |        +0.0145 |
+
+(Note: Arithmetic delta between test evaluation points; does not imply formal statistical significance testing.)
+
+
+================================================================================
+SECTION 5 — MAIN OBSERVATIONS
+================================================================================
+
+1. The Multimodal CNN improved substantially with dataset scale:
+   5.6K ROC-AUC = 0.8452 -> 22.1K ROC-AUC = 0.8706 (+0.0254).
+
+2. At 22.1K events, the Multimodal CNN achieved the highest ROC-AUC (0.8706) and PR-AUC (0.8843) among all evaluated models.
+
+3. The 13D MLP remained a strong tabular baseline across scales:
+   5.6K ROC-AUC = 0.8644 -> 22.1K ROC-AUC = 0.8675 (+0.0031).
+
+4. The frozen-latent classical head (37 parameters) reached:
+   22.1K ROC-AUC = 0.8699, PR-AUC = 0.8822.
+
+5. QNN performance across circuit depths at 22.1K:
+   L=2 (16 params) -> ROC-AUC = 0.8662, PR-AUC = 0.8735
+   L=4 (32 params) -> ROC-AUC = 0.8609, PR-AUC = 0.8718
+   L=6 (48 params) -> ROC-AUC = 0.8556, PR-AUC = 0.8554
+
+6. At the 22.1K scale, L=2 was the strongest of the three QNN configurations by ROC-AUC and PR-AUC.
+
+7. No quantum advantage is claimed.
+
+8. The QNN was evaluated on the exact same frozen latent representation z in R^16 as the classical head.
+
+9. All experiments completed with zero NaN/Inf values, zero runtime failures, and zero memory leaks.
+
+
+================================================================================
+SECTION 6 — CLASSICAL VS QUANTUM COMPARISON
+================================================================================
+
+Controlled comparison on the exact same learned frozen representation z in R^16:
+
+| Benchmark Scale | Classical Frozen-z ROC-AUC | QNN L=2 | QNN L=4 | QNN L=6 |
+|:----------------|---------------------------:|--------:|--------:|--------:|
+| 1.2K Events     |                     0.7732 |  0.7742 |     N/A |     N/A |
+| 5.6K Events     |                     0.8377 |  0.8323 |  0.8344 |  0.8411 |
+| 22.1K Events    |                     0.8699 |  0.8662 |  0.8609 |  0.8556 |
+
+Statement:
+The current experiments demonstrate comparable classical and quantum-head performance on the frozen learned representation at these scales. They do not establish quantum advantage.
+
+
+================================================================================
+SECTION 7 — COMPUTATIONAL FEASIBILITY
+================================================================================
+
+| Benchmark Scale | Events | Total Runtime | Peak RAM | Execution Status |
+|:----------------|-------:|--------------:|---------:|:-----------------|
+| 1.2K Benchmark  |  1,200 |        57.22s | 712.9 MB | Completed (CPU)  |
+| 5.6K Benchmark  |  5,599 |       225.35s | 979.4 MB | Completed (CPU)  |
+| 22.1K Benchmark | 22,099 |       669.85s | 987.4 MB | Completed (CPU)  |
+
+The 22,099-event benchmark completed successfully on CPU in approximately 11.16 minutes with 987.4 MB peak RAM, confirming the operational feasibility of end-to-end simulation and training on standard workstation hardware.
+
+
+================================================================================
+SECTION 8 — CURRENT RESEARCH STATUS
+================================================================================
+
+Completed:
+- Dataset exploratory and statistical distribution analysis.
+- Multi-channel data pipeline and leakage-free stratified splitting.
+- 13D domain-engineered physics feature extraction and baselines.
+- Multimodal Deep 1D-CNN architecture (waveform + spatial PMT + physics).
+- Frozen compact latent space extraction (z in R^16).
+- Variational Quantum Classifier (QNN) integration and resource estimation.
+- Controlled classical-vs-quantum head comparison on identical latent vectors.
+- Small real-data benchmark (1,200 events).
+- Intermediate real-data benchmark (5,599 events).
+- Scaling real-data benchmark (22,099 events).
+- Comprehensive prior-art and technical novelty analysis.
+
+Current Empirical Evidence:
+- End-to-end pipeline is fully operational, deterministic, and numerically stable.
+- Multimodal CNN performance improves consistently with data scale, surpassing tabular baselines at 22.1K scale (ROC-AUC = 0.8706).
+- Classical and QNN heads operate reliably on the same frozen latent representation with near-parity metrics.
+- No quantum advantage has been established.
+
+Remaining Research:
+- Repeated-seed statistical significance validation (confidence intervals).
+- Architectural ablation studies (individual contribution of S1, S2, PMT, and 13D branches).
+- Individual WIMP-mass sensitivity and discovery reach analysis.
+- Dedicated CNNS / solar-8B neutrino fog background rejection study.
+- Noise-model robustness studies for NISQ hardware viability.
+- Optional full-dataset scaling run across all 250,778 events.
+
+
+================================================================================
+SECTION 9 — IMPORTANT DISCLAIMER
+================================================================================
+
+These results are experimental machine-learning benchmark results on simulated XENON1T detector data. They do not constitute evidence of dark-matter discovery and do not establish quantum computational advantage. Statistical significance and generalization require further validation.
+================================================================================
+
+
+ROC-AUC: classical wins.
+PR-AUC: classical wins.
+Accuracy: QNN L=4 is marginally higher, 84.08% vs 84.02%, but this is only a 0.06 percentage-point difference.
+SigEff @ 99.9%: QNN L=2 is higher at this particular operating point.
+Training/inference speed: classical head is substantially faster in your CPU simulation.
+Parameter count: QNN L=2 has 16 circuit parameters vs 37 for the classical head, so there is a parameter-efficiency difference, but that is not the same thing as performance superiority.

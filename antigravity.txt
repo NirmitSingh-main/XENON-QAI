@@ -1,0 +1,674 @@
+================================================================================
+XENON-QAI: COMPLETE ACTIVITY LOG & IMPLEMENTATION AUDIT TRAIL
+File: antigravity.txt
+Created: 2026-09-21 13:10
+Workspace: E:\XENON-QAI
+Specification Reference: dataanalysis.txt
+================================================================================
+
+[2026-09-21 13:10]
+ACTION:
+Created activity log file antigravity.txt
+
+REASON:
+Initialize audit trail for dataset pipeline implementation.
+
+COMMAND:
+N/A (File creation)
+
+RESULT:
+File created at E:\XENON-QAI\antigravity.txt
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:10]
+ACTION:
+Checked PyTorch installation in virtual environment.
+
+REASON:
+Verify prerequisite dependencies for PyTorch Dataset and DataLoader implementation.
+
+COMMAND:
+.\.venv\Scripts\python.exe -c "import torch; print('PyTorch version:', torch.__version__)"
+
+RESULT:
+ModuleNotFoundError: No module named 'torch'
+
+STATUS:
+FAILURE (Expected, proceeding to install)
+
+[2026-09-21 13:10]
+ACTION:
+Installing torch in virtual environment.
+
+REASON:
+Install PyTorch 2.x for tensor structures and DataLoader pipeline.
+
+COMMAND:
+.\.venv\Scripts\pip.exe install torch
+
+RESULT:
+Successfully installed torch-2.14.0+cpu and dependencies (mpmath, typing-extensions, sympy, setuptools, networkx, MarkupSafe, fsspec, filelock, jinja2)
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:12]
+ACTION:
+Verified PyTorch installation.
+
+COMMAND:
+.\.venv\Scripts\python.exe -c "import torch; print('PyTorch:', torch.__version__); print('CUDA:', torch.cuda.is_available())"
+
+RESULT:
+PyTorch: 2.14.0+cpu
+CUDA: False
+
+STATUS:
+SUCCESS (CPU-only, no CUDA GPU available)
+
+[2026-09-21 13:12]
+ACTION:
+Created src/xenon_qai/data/types.py
+
+REASON:
+Define all constants, class mappings, and dimensional specs from dataanalysis.txt.
+
+DETAILS:
+- 12 classes: AC, CNNS, ER, RN, WALL, mDM10GeV..mDM500GeV
+- CLASS_TO_IDX / IDX_TO_CLASS numerical mappings (0..11)
+- PHYSICS_CLASS_MAP: 6-class physics mapping (all WIMPs -> class 5)
+- S1_MAX_LEN = 160, S2_TARGET_LEN = 500
+- TOP_PMT_COUNT = 127, BOT_PMT_COUNT = 121
+- MULTIMODAL_DIM = 908 (160 + 500 + 127 + 121)
+- PHYSICS_FEATURE_DIM = 13
+- DatasetConfig dataclass
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:13]
+ACTION:
+Created src/xenon_qai/data/features.py
+
+REASON:
+Implement 13 physics-derived feature extraction per dataanalysis.txt Section 12.
+
+DETAILS:
+- compute_physics_features(): Extracts s1_area_hits, s2_area_hits, s1_area_raw, s2_area_raw, log_s2_s1, s1_len, s2_len, s1_max, s2_max, top_sum, bot_sum, total_pmt_hits, top_bot_asym
+- extract_features_from_hdf5_event(): Direct HDF5 extraction helper
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:14]
+ACTION:
+Created src/xenon_qai/data/preprocessing.py
+
+REASON:
+Implement waveform resampling, multimodal vector construction, and leakage-free preprocessing per dataanalysis.txt Sections 6, 15, 18.
+
+DETAILS:
+- pad_s1_waveform(): Zero-pad S1 to 160 bins
+- resample_s2_waveform(): Linear interpolation from variable (191-1484) to 500 bins with area preservation
+- build_multimodal_vector(): Concatenates [S1_padded | S2_resampled | HITS_top | HITS_bot] = 908D
+- XenonPreprocessor class: Fitted on training split only, transforms physics features and multimodal vectors
+  - log1p normalization for PMT arrays
+  - Z-score standardization for physics features
+  - save()/load() for persisting fitted preprocessor
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:15]
+ACTION:
+Created src/xenon_qai/data/splitting.py
+
+REASON:
+Implement deterministic stratified train/val/test splitting per dataanalysis.txt Section 17.
+
+DETAILS:
+- get_sorted_event_keys(): Numerical sorting of HDF5 keys (ev_1, ev_2, ..., not ev_1, ev_10, ev_100...)
+- get_hdf5_file_for_class(): Resolves class name to HDF5 filepath with fallback pattern matching
+- create_stratified_split(): 70/15/15 class-stratified split with fixed seed=42
+  - Returns event manifests with class, file_path, event_key, event_id, class_idx, is_signal
+- save_split_manifest() / load_split_manifest(): JSON serialization
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:16]
+ACTION:
+Created src/xenon_qai/data/dataset.py
+
+REASON:
+Implement PyTorch Dataset with lazy HDF5 loading per dataanalysis.txt Section 19.
+
+DETAILS:
+- XenonHDF5Dataset(Dataset): Lazy per-worker HDF5 handle caching
+  - Modes: 'multimodal' (908D), 'physics' (13D), 'both'
+  - Optional return_dict mode for structured output
+  - SWMR (Single Writer Multiple Reader) HDF5 access
+  - Automatic handle cleanup on close/del
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:17]
+ACTION:
+Created src/xenon_qai/data/loader.py
+
+REASON:
+Implement DataLoader factory orchestrating the full pipeline.
+
+DETAILS:
+- _fit_preprocessor_on_train_split(): Samples up to 5000 events from training split for scaler fitting
+- create_dataloaders(): End-to-end factory returning (train_loader, val_loader, test_loader, preprocessor, splits)
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:18]
+ACTION:
+Created src/xenon_qai/data/validation.py
+
+REASON:
+Implement integrity validation checks.
+
+DETAILS:
+- validate_split_integrity(): Checks split disjointness, class coverage, event count conservation
+- validate_batch(): Checks tensor shapes, dtypes, NaN/Inf for all batch modes
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:19]
+ACTION:
+Created src/xenon_qai/data/__init__.py
+
+REASON:
+Export all public API symbols from the data package.
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:20]
+ACTION:
+Created tests/test_data.py
+
+REASON:
+Comprehensive unit and integration tests for data pipeline.
+
+DETAILS:
+5 tests:
+1. test_numerical_sorting: Verifies ev_1..ev_N ordering (not lexicographic)
+2. test_physics_feature_computation: Verifies 13D feature vector with physics invariants
+3. test_waveform_preprocessing: Verifies S1 padding, S2 resampling, multimodal concatenation
+4. test_stratified_split_integrity: Verifies 70/15/15 disjointness, all 12 classes present, reproducibility
+5. test_dataloader_end_to_end: Full pipeline test with batching, preprocessing, label constraints
+
+STATUS:
+SUCCESS
+
+[2026-09-21 13:20]
+ACTION:
+Ran full test suite.
+
+COMMAND:
+.\.venv\Scripts\python.exe -m pytest tests/test_data.py -v --tb=short
+
+RESULT:
+5 passed in 36.42s
+Code coverage: 85% overall
+  - dataset.py: 80%
+  - features.py: 74%
+  - loader.py: 98%
+  - preprocessing.py: 88%
+  - splitting.py: 84%
+  - types.py: 100%
+  - validation.py: 67%
+
+STATUS:
+SUCCESS — ALL 5 TESTS PASS
+
+[2026-09-21 14:02]
+ACTION:
+Checked and installed xgboost and pennylane dependencies.
+
+COMMANDS:
+- .\.venv\Scripts\pip.exe install xgboost
+- .\.venv\Scripts\pip.exe install pennylane
+
+RESULTS:
+- Installed xgboost-3.2.0
+- Installed pennylane-0.45.1 and pennylane-lightning-0.45.0
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:05]
+ACTION:
+Implemented classical baseline models and MLPs in src/xenon_qai/models/baselines/
+
+FILES CREATED/UPDATED:
+- src/xenon_qai/models/baselines/xgboost.py: XenonXGBoost with XGBClassifier and HistGradientBoostingClassifier fallback
+- src/xenon_qai/models/baselines/mlp.py: PyTorch XenonMLPModule and XenonMLP wrapper with Cosine Annealing, AdamW, early stopping
+- src/xenon_qai/models/baselines/logistic.py: XenonLogisticRegression benchmark
+- src/xenon_qai/models/baselines/random_forest.py: XenonRandomForest on 13D physics features
+- src/xenon_qai/models/baselines/__init__.py: Exported all baselines
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:06]
+ACTION:
+Implemented Multi-Modal Deep 1D-CNN in src/xenon_qai/models/cnn/
+
+DETAILS:
+- S1WaveformCNN: 1D-CNN temporal pulse encoder (160 bins)
+- S2WaveformCNN: 1D-CNN dilated envelope encoder (500 bins)
+- PMTSpatialMLP: 248-PMT spatial hit pattern encoder
+- PhysicsFeatureMLP: 13D domain feature encoder
+- XenonMultimodalCNN: Bottleneck fusion encoder yielding latent z in R^{latent_dim} (e.g. 32D, 16D, 8D)
+- train.py: train_epoch, evaluate_model, and train_xenon_cnn training loop
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:08]
+ACTION:
+Implemented Quantum Machine Learning modules in src/xenon_qai/quantum/
+
+FILES CREATED:
+- src/xenon_qai/quantum/encoding.py: Angle, dense angle, and IQP quantum state encodings
+- src/xenon_qai/quantum/feature_map.py: ZZFeatureMap and ChebyshevFeatureMap
+- src/xenon_qai/quantum/circuit.py: Parameterized variational ansatz circuits
+- src/xenon_qai/quantum/classical_head.py: ParameterMatchedClassicalHead for fair parameter-budget matching
+- src/xenon_qai/quantum/qnn.py: QuantumVariationalClassifier (TorchLayer QNode) and QuantumHybridClassifier
+- src/xenon_qai/quantum/qkernel.py: QuantumKernelEstimator and XenonQSVC
+- src/xenon_qai/quantum/noise.py: NoisyDeviceManager for NISQ open quantum systems
+- src/xenon_qai/quantum/resources.py: Quantum circuit depth, 2-qubit CNOT count, gate count, and entanglement measures
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:09]
+ACTION:
+Implemented liquid xenon detector physics domain modules in src/xenon_qai/physics/
+
+FILES CREATED:
+- src/xenon_qai/physics/energy.py: Combined energy scale E = W * (S1/g1 + S2/g2) and electron lifetime correction
+- src/xenon_qai/physics/s1_s2.py: log10(S2/S1) ER/NR discrimination bands and leakage estimation
+- src/xenon_qai/physics/recoil.py: Lindhard nuclear recoil quenching L(E_R) in xenon
+- src/xenon_qai/physics/cevns.py: Coherent Elastic Neutrino-Nucleus Scattering differential cross section & Helm form factor
+- src/xenon_qai/physics/neutrino_fog.py: Solar 8B flux and Neutrino Fog sensitivity floor model
+- src/xenon_qai/physics/backgrounds.py: Physical descriptions of ER, RN, Wall, AC, CNNS
+- src/xenon_qai/physics/detector_geometry.py: Dual-phase TPC geometry, drift velocity, and fiducial volume selection
+- src/xenon_qai/physics/timing.py: Longitudinal electron diffusion and pulse timing
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:10]
+ACTION:
+Implemented evaluation and comparative benchmarking modules in src/xenon_qai/evaluation/
+
+FILES CREATED:
+- src/xenon_qai/evaluation/roc.py: ROC curve generation and AUC
+- src/xenon_qai/evaluation/precision_recall.py: Precision-Recall curves and Average Precision
+- src/xenon_qai/evaluation/efficiency.py: Signal efficiency at 90%, 99%, 99.9%, 99.99% background rejection
+- src/xenon_qai/evaluation/significance.py: Profile likelihood / Poisson discovery significance Z
+- src/xenon_qai/evaluation/comparison.py: Classical vs Quantum side-by-side performance benchmarking
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:16]
+ACTION:
+Implemented Transformer and RNN temporal models and utilities.
+
+FILES CREATED:
+- src/xenon_qai/models/transformer/encoder.py: WaveformTransformerEncoder with patched self-attention
+- src/xenon_qai/models/transformer/model.py: XenonTransformerModel
+- src/xenon_qai/models/rnn/model.py: WaveformRNNEncoder & XenonRNNModel with Bidirectional GRU
+- src/xenon_qai/anomaly/scoring.py: XenonAnomalyScorer
+- src/xenon_qai/anomaly/ranking.py: CandidateRanker
+- src/xenon_qai/anomaly/quantum_anomaly.py: QuantumFidelityAnomalyDetector
+- src/xenon_qai/uncertainty/calibration.py: TemperatureScaler & compute_ece
+- src/xenon_qai/uncertainty/uncertainty.py: estimate_mc_dropout_uncertainty
+- src/xenon_qai/uncertainty/confidence.py: compute_prediction_intervals
+- src/xenon_qai/explainability/feature_importance.py: compute_integrated_gradients
+- src/xenon_qai/explainability/physics_checks.py: check_s2_s1_monotonicity
+- src/xenon_qai/representation/dimensionality_reduction.py: LatentReducer (PCA/t-SNE)
+- src/xenon_qai/utils/seed.py, device.py, logging.py, checkpoint.py
+
+STATUS:
+SUCCESS
+
+[2026-09-21 14:21]
+ACTION:
+Executed full automated test suite with pytest.
+
+COMMAND:
+.\.venv\Scripts\python.exe -m pytest tests/ -v --tb=short
+
+RESULTS:
+29 passed in 45.17s (0 failures, 100% test pass rate)
+- test_data.py: 5 tests passed
+- test_models.py: 5 tests passed
+- test_physics.py: 5 tests passed
+- test_quantum.py: 5 tests passed
+- test_pipeline.py: 1 end-to-end integration test passed
+- test_transformer_rnn.py: 2 tests passed
+- test_anomaly_uncertainty.py: 6 tests passed
+
+STATUS:
+SUCCESS — ALL 29 TESTS PASSING
+
+================================================================================
+CURRENT PROJECT STATE (as of 2026-09-21 14:22)
+================================================================================
+
+COMPLETED ARCHITECTURES & MODULES:
+1. Data Pipeline: 8 modules in src/xenon_qai/data/ (lazy HDF5 loading, 13D physics feature extraction, S1/S2 resampling, 70/15/15 deterministic stratified splitting)
+2. Classical Baselines: Logistic Regression, Random Forest, XGBoost, and MLP
+3. Deep Learning Architectures:
+   - Multi-branch 1D-CNN (S1 1D-CNN, S2 1D-CNN, PMT Spatial MLP, Physics MLP, Bottleneck Latent z ∈ R^32)
+   - Multi-modal Waveform Transformer (self-attention on waveform patches)
+   - Bidirectional GRU/RNN temporal sequence encoder
+4. Quantum Machine Learning:
+   - Angle, Dense Angle, IQP encodings
+   - ZZFeatureMap, ChebyshevFeatureMap
+   - Parameterized Hardware-Efficient & RealAmplitudes variational ansatzes
+   - QuantumVariationalClassifier (TorchLayer QNode)
+   - QuantumHybridClassifier (Classical Encoder -> Quantum Head)
+   - ParameterMatchedClassicalHead (fair parameter budget matched classical benchmark)
+   - QuantumKernelEstimator & XenonQSVC
+   - NoisyDeviceManager (NISQ open quantum system noise channels)
+   - Quantum circuit resource counting (gates, depth, 2-qubit CNOTs)
+5. Physics Domain:
+   - Combined energy scale reconstruction (E = W * (S1/g1 + S2/g2))
+   - log10(S2/S1) discrimination bands & ER leakage fraction
+   - Lindhard nuclear recoil quenching L(E_R)
+   - CEvNS differential cross-section and Helm nuclear form factor
+   - Neutrino Fog limit model
+   - Background source properties (ER, RN, Wall, AC, CNNS)
+   - Dual-phase TPC geometry and fiducial volume selection
+   - Pulse timing and longitudinal electron diffusion
+6. Anomaly & Ranking:
+   - XenonAnomalyScorer (Isolation Forest / background distance)
+   - CandidateRanker (priority-ordered candidate event ranking)
+   - QuantumFidelityAnomalyDetector
+7. Uncertainty & Explainability:
+   - TemperatureScaler & ECE calibration
+   - Monte Carlo Dropout epistemic uncertainty
+   - Integrated Gradients feature attribution
+   - S2/S1 monotonicity physics validation checks
+8. Test Suite:
+   - 29 unit & integration tests passing (100% pass rate)
+
+[2026-09-21 14:35]
+ACTION:
+Executed small real-data CPU benchmark on representative dataset subset (1,200 events from 12 classes).
+
+COMMAND:
+.\.venv\Scripts\python.exe scripts/run_small_benchmark.py
+
+PURPOSE:
+Evaluate end-to-end CPU execution feasibility, loading time, preprocessing time, training time per epoch, inference time, RAM footprint, tensor shapes, stability (NaN/Inf checks), and priority research comparisons:
+1. 13D Physics feature baselines (RF, XGBoost, Logistic, MLP)
+2. Multimodal CNN -> frozen latent z in R^16
+3. Parameter-matched Classical Head on frozen latents
+4. Quantum Head (QNN, 4 qubits, 2 layers) on the SAME frozen latents
+
+RESULTS:
+- Memory: Initial RAM: 377.8 MB -> Peak/Final: 712.9 MB (Delta: +335.1 MB)
+- Setup & Preprocessing Time: 8.66 seconds for 1,200 events
+- Split sizes: Train: 839 | Val: 179 | Test: 181
+- Batch Shapes:
+  * Multimodal: [32, 908] (float32)
+  * Physics: [32, 13] (float32)
+  * Binary Target: [32] (int64)
+  * Class Target: [32] (int64)
+- NaN / Inf Check: 0 NaN, 0 Inf (100% numerical stability)
+
+BENCHMARK TIMINGS & METRICS TABLE:
+--------------------------------------------------------------------------------------------------
+Model / Pipeline Stage         | ROC-AUC   | PR-AUC    | Accuracy  | SigEff@99.9% Rej | Train Time (s)
+--------------------------------------------------------------------------------------------------
+Random Forest (13D)            | 0.8571    | 0.8548    | 81.77%    | 0.0286           | 0.17s
+XGBoost (13D)                  | 0.8573    | 0.8749    | 80.11%    | 0.1619           | 1.91s
+Logistic Regression (13D)      | 0.7701    | 0.7907    | 71.82%    | 0.0381           | 0.02s
+MLP (13D)                      | 0.8612    | 0.8606    | 79.56%    | 0.0381           | 11.18s (0.37s/ep)
+Multimodal CNN (End-to-End)    | 0.7920    | 0.8073    | 78.45%    | 0.0857           | 27.76s (1.85s/ep)
+Classical Head (Frozen z)      | 0.7732    | 0.7484    | 76.80%    | 0.0000           | 0.54s (0.027s/ep)
+Quantum Head (QNN, Frozen z)   | 0.7742    | 0.7656    | 80.11%    | 0.0095           | 4.27s (0.43s/ep)
+--------------------------------------------------------------------------------------------------
+
+CPU FEASIBILITY ASSESSMENT:
+- Total execution time for all 7 models + data loading + QNN: 57.22 seconds (< 1 minute).
+- CPU execution is fully practical and stable for intermediate scaling (e.g. 5,000 to 25,000 events).
+- QNN execution with PennyLane default.qubit is fast on CPU (~0.015s per batch of 32 for 4 qubits).
+
+STATUS:
+SUCCESS — BENCHMARK COMPLETED WITH ZERO FAILURES
+
+================================================================================
+CURRENT PROJECT STATE (as of 2026-09-21 14:38)
+================================================================================
+
+COMPLETED:
+1. Small real-data benchmark on CPU (1,200 events across all 12 classes).
+2. Measured timing, RAM usage, tensor shapes, loss curves, and evaluation metrics across all 4 priority stages.
+3. Established baseline comparison on identical frozen latent representations z in R^16.
+
+EXACT NEXT RECOMMENDED STEP:
+Scale up to an intermediate real-data experiment (e.g., 500 events/class = 6,000 events) to evaluate statistical significance, study latent space structure via PCA/UMAP, and analyze quantum circuit depth and noise robustness.
+================================================================================
+
+[2026-09-21 14:54]
+ACTION:
+Executed intermediate real-data benchmark (500 events/class, ~6,000 total events).
+
+COMMAND:
+$env:PYTHONPATH="e:\XENON-QAI\src"; .venv\Scripts\python scripts/run_intermediate_benchmark.py 2>&1
+
+REASON:
+Scale from small benchmark (1,200 events) to intermediate (6,000 events) to evaluate
+statistical significance and all 9 configurations head-to-head. First attempt failed with
+ModuleNotFoundError (xenon_qai not on sys.path) — fixed by setting PYTHONPATH explicitly.
+
+DATASET:
+  Events per class:  500
+  Total events:      5,599  (train: 3,919 | val: 839 | test: 841)
+  Classes:           12  Split seed: 42, stratified, leakage-free (disjoint verified)
+  Multimodal vector: torch.Size([64, 908]) float32
+  Physics (13D):     torch.Size([64, 13])  float32
+  Data NaN/Inf:      PASS (0 NaN, 0 Inf)
+
+RESULTS — 13D PHYSICS BASELINES:
+  Random Forest     ROC-AUC=0.8614  PR-AUC=0.8780  Acc=0.8288  SigEff@99.9%=0.0190  Train=0.69s
+  XGBoost           ROC-AUC=0.8571  PR-AUC=0.8644  Acc=0.8323  SigEff@99.9%=0.0019  Train=2.00s
+  Logistic Reg.     ROC-AUC=0.7966  PR-AUC=0.8099  Acc=0.7812  SigEff@99.9%=0.0000  Train=0.02s
+  MLP (13D)         ROC-AUC=0.8644  PR-AUC=0.8706  Acc=0.8359  SigEff@99.9%=0.0114  Train=22.25s
+
+RESULTS — MULTIMODAL CNN (S1+S2+PMT+Physics -> z in R^16):
+  CNN (15 epochs)   ROC-AUC=0.8452  PR-AUC=0.8553  Acc=0.7943  SigEff@99.9%=0.0190  Train=117.07s (7.81s/ep)
+  Latent z: Mean=-0.0051, Std=1.012, Range=[-2.43, 2.85]  NaN=0  Inf=0
+
+RESULTS — FROZEN LATENT HEADS (EXACT SAME z, FAIR COMPARISON):
+  Classical Head (37p)  ROC-AUC=0.8377  PR-AUC=0.8593  Acc=0.7967  SigEff@99.9%=0.0229  Train=1.77s
+  QNN L=2 (16p)         ROC-AUC=0.8323  PR-AUC=0.8299  Acc=0.7955  SigEff@99.9%=0.0000  Train=9.97s
+  QNN L=4 (32p)         ROC-AUC=0.8344  PR-AUC=0.8548  Acc=0.8145  SigEff@99.9%=0.0000  Train=16.69s
+  QNN L=6 (48p)         ROC-AUC=0.8411  PR-AUC=0.8571  Acc=0.8038  SigEff@99.9%=0.0057  Train=24.26s
+
+MEMORY:
+  Initial: 377.9 MB  | Peak: 979.4 MB (+601.5 MB) | Final: 875.0 MB
+  CPU fully practical. Total execution: 225.35s (3.76 minutes).
+
+OUTPUTS:
+  results/intermediate_benchmark_results.json
+  results/intermediate_split_manifest.json
+  results/frozen_latents_intermediate.npz
+
+STATUS:
+  SUCCESS — Exit code 0. All 9 configurations completed. Zero NaN/Inf throughout.
+
+================================================================================
+CURRENT PROJECT STATE (as of 2026-09-21 15:00)
+================================================================================
+
+COMPLETED:
+1. Full dataset analysis and pipeline implementation.
+2. Small real-data benchmark (1,200 events, all 12 classes).
+3. Intermediate real-data benchmark (5,599 events, 9 model configurations).
+4. Fair classical vs quantum comparison on identical frozen latents z in R^16.
+5. All results in JSON + frozen latents in .npz for reproducibility.
+
+KEY FINDINGS:
+- 13D MLP is top model by ROC-AUC (0.8644) and accuracy (0.8359).
+- Random Forest leads on PR-AUC (0.8780); second best overall.
+- Multimodal CNN does not outperform 13D baselines at this data scale (expected — CNNs need more data).
+- Classical Head (37p) outperforms QNN on PR-AUC; QNN L=6 ROC-AUC (0.8411) edges Classical (0.8377).
+- No quantum advantage is claimed. Results indicate classical parity at this scale.
+- SigEff@99.9% bkg rejection is low across all models — needs more data or threshold tuning.
+
+EXACT NEXT RECOMMENDED STEP:
+Scale to 5,000+ events/class or full dataset (250,778 events) to improve statistical power,
+add early stopping + dropout to CNN, and run UMAP/PCA on frozen latent space z.
+================================================================================
+
+[2026-09-21 15:45]
+ACTION:
+Completed Technical Prior-Art and Novelty Analysis for Invention Disclosure / IPR Support.
+
+DOCUMENTS & ARTIFACTS CREATED:
+- docs/prior_art_analysis.md: Comprehensive 569-line prior-art study covering 12 academic publications, patent databases (Google Patents, WIPO, USPTO), technical differentiator classification (A/B/C/D), neutral scientific description of technical distinctions, guidelines on non-claims, and search limitations statement.
+- results/prior_art_matrix.csv: Structured machine-readable 12-paper comparison matrix across 14 technical criteria.
+
+KEY FINDINGS:
+1. Deep learning on liquid-xenon S1/S2 features is established in literature (Lopez-Fogliani et al. 2024/2025, XENON Collaboration, PandaX, LZ) -> Status A.
+2. Joint multimodal fusion of S1 waveform (160 bins) + S2 waveform (500 bins) + Top/Bottom PMT spatial patterns (248 channels) + 13D physical invariants into a single unified representation was not identified in the searched literature -> Status C.
+3. Explicit compact learned latent representation z in R^d of multi-modal XENON events was not identified in searched literature -> Status C.
+4. Variational Quantum Classifiers (VQC) in HEP are established for collider/accelerator data (Terashi et al. 2020, Blance & Spannowsky 2020), but application to liquid-xenon dark matter direct detection direct waveforms/PMT data was not identified -> Status B/D.
+5. Controlled parameter-matched comparison on identical frozen latent representations z in R^16 across classical and quantum heads was not identified in searched literature -> Status C.
+6. Zero granted patents found combining LXe DM detection + deep multimodal fusion + compact latent + QML classification.
+
+STATUS:
+SUCCESS — PRIOR-ART STUDY COMPLETE
+
+[2026-09-21 15:53]
+ACTION:
+Created scripts/run_25k_benchmark.py and executed the 25k Real-Data Scaling Benchmark (~2,000 events/class, 12 classes).
+
+COMMAND:
+$env:PYTHONPATH="e:\XENON-QAI\src"; .venv\Scripts\python scripts/run_25k_benchmark.py
+
+DATASET CONFIGURATION:
+- Events per class: 2,000 target across 12 classes
+- Total events: 22,099 (Train: 15,469 | Val: 3,314 | Test: 3,316)
+- Split: 70% / 15% / 15% stratified, seed 42
+- Verification: 100% disjoint (0 overlap across all split pairs, 12 classes covered)
+- Preprocessing: Fitted strictly on training split only (0 validation/test leakage)
+- Batch shape: Multimodal [64, 908] float32, Physics [64, 13] float32
+- Data stability: 0 NaN, 0 Inf
+
+TIMINGS & COMPUTATIONAL PROFILE:
+- Initial RAM: 381.1 MB | Peak RAM: 987.4 MB (+606.3 MB) | Final RAM: 836.3 MB
+- Total Execution Duration: 669.85s (11.16 minutes) on CPU
+- Preprocessing & Feature Extraction: 38.70s
+
+BENCHMARK RESULTS (22,099 EVENTS):
+------------------------------------------------------------------------------------------------------------------
+Model / Pipeline Stage       | ROC-AUC  | PR-AUC   | Accuracy  | SigEff@99.9% | Train (s)  | Infer (s) | Peak RAM 
+------------------------------------------------------------------------------------------------------------------
+13D RF                       | 0.8545   | 0.8669   | 0.8314    | 0.0043       | 1.24s      | 0.161s    | 987.4 MB
+13D XGBoost                  | 0.8639   | 0.8735   | 0.8453    | 0.0081       | 2.15s      | 0.024s    | 987.4 MB
+13D Logistic                 | 0.8205   | 0.8433   | 0.7877    | 0.0095       | 0.07s      | 0.009s    | 987.4 MB
+13D MLP                      | 0.8675   | 0.8778   | 0.8489    | 0.0190       | 21.44s     | 0.014s    | 987.4 MB
+Multimodal CNN               | 0.8706   | 0.8843   | 0.8393    | 0.0105       | 406.82s    | 3.157s    | 987.4 MB
+Frozen-z Classical Head      | 0.8699   | 0.8822   | 0.8402    | 0.0024       | 6.13s      | 0.001s    | 987.4 MB
+Frozen-z QNN L=2             | 0.8662   | 0.8735   | 0.8356    | 0.0090       | 35.54s     | 0.026s    | 987.4 MB
+Frozen-z QNN L=4             | 0.8609   | 0.8718   | 0.8408    | 0.0010       | 54.94s     | 0.043s    | 987.4 MB
+Frozen-z QNN L=6             | 0.8556   | 0.8554   | 0.8372    | 0.0010       | 75.81s     | 0.056s    | 987.4 MB
+------------------------------------------------------------------------------------------------------------------
+
+FROZEN LATENT AUDIT (z in R^16):
+- Extracted shapes: Train (15469, 16), Val (3314, 16), Test (3316, 16)
+- Statistics: Mean=0.0113, Std=1.0449, Min=-2.6087, Max=2.4638
+- NaN Count: 0 | Inf Count: 0
+- Saved to: results/frozen_latents_25k.npz
+
+THREE-SCALE DATASET COMPARISON (1.2k -> 5.6k -> 25k):
+--------------------------------------------------------------------------------------------------
+Dataset Size | Model                   | ROC-AUC   | PR-AUC    | Accuracy  | SigEff@99.9%
+--------------------------------------------------------------------------------------------------
+1,200 events | 13D MLP                 | 0.8612    | 0.8606    | 79.56%    | 0.0381
+1,200 events | 13D RF                  | 0.8571    | 0.8548    | 81.77%    | 0.0286
+1,200 events | Multimodal CNN          | 0.7920    | 0.8073    | 78.45%    | 0.0857
+1,200 events | Frozen-z Classical Head | 0.7732    | 0.7484    | 76.80%    | 0.0000
+1,200 events | Frozen-z QNN L=2        | 0.7742    | 0.7656    | 80.11%    | 0.0095
+--------------------------------------------------------------------------------------------------
+5,599 events | 13D MLP                 | 0.8644    | 0.8706    | 83.59%    | 0.0114
+5,599 events | 13D RF                  | 0.8614    | 0.8780    | 82.88%    | 0.0190
+5,599 events | Multimodal CNN          | 0.8452    | 0.8553    | 79.43%    | 0.0190
+5,599 events | Frozen-z Classical Head | 0.8377    | 0.8593    | 79.67%    | 0.0229
+5,599 events | Frozen-z QNN L=2        | 0.8323    | 0.8299    | 79.55%    | 0.0000
+5,599 events | Frozen-z QNN L=4        | 0.8344    | 0.8548    | 81.45%    | 0.0000
+5,599 events | Frozen-z QNN L=6        | 0.8411    | 0.8571    | 80.38%    | 0.0057
+--------------------------------------------------------------------------------------------------
+22,099 events| 13D MLP                 | 0.8675    | 0.8778    | 84.89%    | 0.0190
+22,099 events| 13D RF                  | 0.8545    | 0.8669    | 83.14%    | 0.0043
+22,099 events| Multimodal CNN          | 0.8706    | 0.8843    | 83.93%    | 0.0105
+22,099 events| Frozen-z Classical Head | 0.8699    | 0.8822    | 84.02%    | 0.0024
+22,099 events| Frozen-z QNN L=2        | 0.8662    | 0.8735    | 83.56%    | 0.0090
+22,099 events| Frozen-z QNN L=4        | 0.8609    | 0.8718    | 84.08%    | 0.0010
+22,099 events| Frozen-z QNN L=6        | 0.8556    | 0.8554    | 83.72%    | 0.0010
+--------------------------------------------------------------------------------------------------
+
+FILES SAVED:
+- results/25k_benchmark_results.json
+- results/25k_split_manifest.json
+- results/frozen_latents_25k.npz
+- results/25k_benchmark_summary.csv
+
+STATUS:
+SUCCESS — 25K SCALING BENCHMARK COMPLETE (0 ERRORS, 0 NaNs, 0 Infs)
+
+================================================================================
+CURRENT PROJECT STATE (as of 2026-09-23 00:25)
+================================================================================
+All requested scaling benchmarks (1.2k, 5.6k, and 25k) and technical prior-art novelty analysis are complete.
+The pipeline is fully reproducible and validated.
+
+[2026-09-23 00:25]
+ACTION:
+Comprehensively updated .gitignore to ignore all dataset formats and untracked all dataset archive files from git tracking. Cleaned unpushed git commit history to remove large blobs.
+
+REASON:
+Prevent raw/extracted datasets, large tar.xz/tar.gz/h5/npz archives (>12 GB total), and binary files from being tracked or pushed to remote GitHub repository.
+
+CHANGES MADE:
+1. Updated .gitignore:
+   - Added `data/*` rule with exceptions for `!data/.gitkeep` and `!data/README.md`
+   - Added comprehensive archive and binary rules: `*.tar`, `*.tar.gz`, `*.tar.xz`, `*.tar.bz2`, `*.zip`, `*.7z`, `*.rar`, `*.h5`, `*.hdf5`, `*.npz`, `*.npy`, `*.parquet`, `*.root`, `*.dat`, `*.bin`
+   - Preserved directory exclusions: `data/raw/`, `data/processed/`, `data/interim/`, `data/external/`, `data/extracted/`
+2. Untracked all data archives from Git staging index via `git rm --cached` without deleting physical files from disk.
+3. Cleaned local commit history so large binary objects (>100 MB per file limit on GitHub) are completely excluded from Git packfiles.
+4. Preserved all source code, tests, configs, benchmarks, manifests, and documentation in a clean single commit ahead of origin/main.
+
+LOCAL DATA INTEGRITY VERIFIED:
+- data/00-images.tar.xz (8.86 GB) - INTACT
+- data/AC.tar.xz, CNNS.tar.xz, cs1cs2.tar.xz, ER.tar.xz, RN.tar.xz, WALL.tar.xz - INTACT
+- data/mDM*.tar.xz (10GeV, 20GeV, 35GeV, 50GeV, 100GeV, 200GeV, 500GeV) - INTACT
+- data/extracted/ (all 14 class folders) - INTACT
+
+GIT TRACKING VERIFIED:
+- git ls-files data/ -> data/.gitkeep only
+- git status -> working tree clean
+
+STATUS:
+SUCCESS — DATASET FULLY IGNORED AND UNTRACKED
+================================================================================
+

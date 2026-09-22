@@ -1,0 +1,147 @@
+{
+  "dataset_info": {
+    "total_events": 5599,
+    "n_train": 3919,
+    "n_val": 839,
+    "n_test": 841,
+    "events_per_class": 500,
+    "n_classes": 12
+  },
+  "timings": {
+    "13D RF": {
+      "train_s": 0.6887533664703369,
+      "infer_s": 0.15190553665161133
+    },
+    "13D XGBoost": {
+      "train_s": 1.997786283493042,
+      "infer_s": 0.015057563781738281
+    },
+    "13D Logistic": {
+      "train_s": 0.02484607696533203,
+      "infer_s": 0.013120412826538086
+    },
+    "13D MLP": {
+      "train_s": 22.251749992370605,
+      "infer_s": 0.010043621063232422
+    },
+    "Multimodal CNN": {
+      "train_s": 117.07412600517273,
+      "per_epoch_s": 7.804941733678182,
+      "infer_s": 0.8854005336761475
+    },
+    "Frozen-z Classical Head": {
+      "train_s": 1.7738673686981201,
+      "infer_s": 0.0
+    },
+    "Frozen-z QNN L=2": {
+      "train_s": 9.972496271133423,
+      "per_epoch_s": 0.9972496271133423,
+      "infer_s": 0.012482881546020508,
+      "qubits": 4,
+      "layers": 2,
+      "quantum_params": 16,
+      "circuit_depth": 16,
+      "cnot_count": 18
+    },
+    "Frozen-z QNN L=4": {
+      "train_s": 16.686524868011475,
+      "per_epoch_s": 1.6686524868011474,
+      "infer_s": 0.02118849754333496,
+      "qubits": 4,
+      "layers": 4,
+      "quantum_params": 32,
+      "circuit_depth": 24,
+      "cnot_count": 24
+    },
+    "Frozen-z QNN L=6": {
+      "train_s": 24.260517835617065,
+      "per_epoch_s": 2.4260517835617064,
+      "infer_s": 0.027296066284179688,
+      "qubits": 4,
+      "layers": 6,
+      "quantum_params": 48,
+      "circuit_depth": 32,
+      "cnot_count": 30
+    }
+  },
+  "metrics": {
+    "13D RF": {
+      "roc_auc": 0.8613893911995179,
+      "pr_auc": 0.8780290490775341,
+      "accuracy": 0.8287752675386445,
+      "f1": 0.8695652173913043,
+      "sig_eff_at_99.9_bkg_rej": 0.01904761904761905,
+      "sig_eff_at_99.99_bkg_rej": 0.01904761904761905
+    },
+    "13D XGBoost": {
+      "roc_auc": 0.857124773960217,
+      "pr_auc": 0.8643875162843639,
+      "accuracy": 0.8323424494649228,
+      "f1": 0.8748890860692103,
+      "sig_eff_at_99.9_bkg_rej": 0.0019047619047619048,
+      "sig_eff_at_99.99_bkg_rej": 0.0019047619047619048
+    },
+    "13D Logistic": {
+      "roc_auc": 0.7965822784810128,
+      "pr_auc": 0.8098609085946024,
+      "accuracy": 0.7812128418549346,
+      "f1": 0.8333333333333334,
+      "sig_eff_at_99.9_bkg_rej": 0.0,
+      "sig_eff_at_99.99_bkg_rej": 0.0
+    },
+    "13D MLP": {
+      "roc_auc": 0.8644243520192887,
+      "pr_auc": 0.8706490251275573,
+      "accuracy": 0.835909631391201,
+      "f1": 0.8791593695271454,
+      "sig_eff_at_99.9_bkg_rej": 0.011428571428571429,
+      "sig_eff_at_99.99_bkg_rej": 0.011428571428571429
+    },
+    "Multimodal CNN": {
+      "roc_auc": 0.8451717902350815,
+      "pr_auc": 0.8552573501782357,
+      "accuracy": 0.7942925089179548,
+      "f1": 0.8338136407300673,
+      "sig_eff_at_99.9_bkg_rej": 0.01904761904761905,
+      "sig_eff_at_99.99_bkg_rej": 0.01904761904761905
+    },
+    "Frozen-z Classical Head": {
+      "roc_auc": 0.8376853526220616,
+      "pr_auc": 0.8593429515095907,
+      "accuracy": 0.7966706302021404,
+      "f1": 0.8423963133640553,
+      "sig_eff_at_99.9_bkg_rej": 0.022857142857142857,
+      "sig_eff_at_99.99_bkg_rej": 0.022857142857142857
+    },
+    "Frozen-z QNN L=2": {
+      "roc_auc": 0.8322905364677518,
+      "pr_auc": 0.8299420821178751,
+      "accuracy": 0.7954815695600476,
+      "f1": 0.8401486988847584,
+      "sig_eff_at_99.9_bkg_rej": 0.0,
+      "sig_eff_at_99.99_bkg_rej": 0.0
+    },
+    "Frozen-z QNN L=4": {
+      "roc_auc": 0.8343610608800482,
+      "pr_auc": 0.8548388602781334,
+      "accuracy": 0.8145065398335315,
+      "f1": 0.8626760563380281,
+      "sig_eff_at_99.9_bkg_rej": 0.0,
+      "sig_eff_at_99.99_bkg_rej": 0.0
+    },
+    "Frozen-z QNN L=6": {
+      "roc_auc": 0.8411030741410488,
+      "pr_auc": 0.8571131147027667,
+      "accuracy": 0.8038049940546967,
+      "f1": 0.8504079782411604,
+      "sig_eff_at_99.9_bkg_rej": 0.005714285714285714,
+      "sig_eff_at_99.99_bkg_rej": 0.005714285714285714
+    }
+  },
+  "memory": {
+    "initial_ram_mb": 377.8671875,
+    "peak_ram_mb": 979.4453125,
+    "final_ram_mb": 874.97265625
+  },
+  "total_duration_s": 225.35173916816711
+}
