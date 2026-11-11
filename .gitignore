@@ -1,4 +1,8 @@
-# Python
+# ==============================================================================
+# XENON-QAI Project .gitignore
+# ==============================================================================
+
+# 1. Python Cache & Build Artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,17 +12,47 @@ __pycache__/
 dist/
 build/
 .eggs/
-.env
-.venv
-env/
+
+# 2. Virtual Environments
+.venv/
 venv/
+env/
 ENV/
 
-# Jupyter
+# 3. Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Data (never commit raw/processed data, archives, or extracted sets)
+# 4. IDE & OS Metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 5. Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 6. ML Tracking & Execution Logs
+mlruns/
+wandb/
+*.log
+experiment_logs/
+
+# 7. Secrets & Environment Files
+.env
+.env.*
+configs/secrets.yaml
+
+# 8. All Plain Text Notes & Working Documents (Strict Exception Rule)
+*.txt
+!requirements.txt
+!requirements-dev.txt
+
+# 9. Large Datasets & Compressed Archives (Never commit raw data)
 data/*
 !data/.gitkeep
 !data/README.md
@@ -31,7 +65,6 @@ data/extracted/
 *.hdf5
 *.npz
 *.npy
-*.csv
 *.parquet
 *.root
 *.tar
@@ -44,43 +77,34 @@ data/extracted/
 *.dat
 *.bin
 
-# Results & checkpoints (large binaries)
-results/checkpoints/*.pt
-results/checkpoints/*.pth
-results/checkpoints/*.ckpt
-results/predictions/*.npy
-results/latent_spaces/*.npy
+# 10. Model Checkpoints & Large Binary Embeddings
+*.pt
+*.pth
+*.ckpt
 
-# Configs with secrets
-.env
-configs/secrets.yaml
+# 11. Intermediate Experiments, Split Manifests & Predictions
+results/45k_benchmark/*.pt
+results/45k_benchmark/*.npz
+results/45k_benchmark/*.json
+results/ablation_study/*.json
+results/per_class_evaluation/*.json
+results/*split_manifest.json
+results/predictions/*
+!results/predictions/.gitkeep
+results/latent_spaces/*
+!results/latent_spaces/.gitkeep
+results/checkpoints/*
+!results/checkpoints/.gitkeep
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
+# 12. Tabular Files Rule (Ignore intermediate/unapproved tabular data)
+*.tsv
+*.xlsx
+*.parquet
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# MLflow / WandB
-mlruns/
-wandb/
-
-# Logs
-*.log
-experiment_logs/
-
-# Personal / local notes
-terminal.txt
-
-
-plan.txt
-working.txt
-antigravity.txt
-dataanalysis.txt
+# Default: ignore CSVs, EXCEPT approved final research benchmark tables
+*.csv
+!results/45k_benchmark/45k_benchmark_summary.csv
+!results/ablation_study/ablation_summary.csv
+!results/per_class_evaluation/per_class_breakdown.csv
+!results/25k_benchmark_summary.csv
+!results/prior_art_matrix.csv
