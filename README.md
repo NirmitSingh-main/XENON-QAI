@@ -8,11 +8,25 @@
 
 ## 🚧 Project Status
 
-**Status:** Research / Early Development
+**Status:** Research & Experimental Benchmarking (Active Development — In Progress)
 
-XENON-QAI is currently in the **physics and dataset understanding phase**.
+XENON-QAI has advanced from initial architecture prototyping to empirical benchmarking and multi-modal scaling analysis.
 
-The repository structure has been established, while the actual data pipeline, model architecture, experiments, and quantum components will be developed progressively after inspecting the available XENON event representations.
+### Recent Progress & Verified Milestones:
+- **Comprehensive Dataset & Physics Pipeline:** Fully operational multi-modal ingestion pipeline parsing 250,778 raw dual-phase xenon simulation events across 12 classes (S1 prompt scintillation, S2 ionization drift, 248 top/bottom PMTs, and 13 domain-engineered physics features).
+- **Multi-Scale Empirical Benchmarking:**
+  - Evaluated four empirical benchmark scales: **1.2K**, **5.6K**, **22.1K**, and the definitive **45,000-event benchmark**.
+  - Confirmed monotonic performance scaling of the Multimodal 1D-CNN: ROC-AUC progressed from **0.8120** (1.2K) $\rightarrow$ **0.8452** (5.6K) $\rightarrow$ **0.8706** (22.1K) $\rightarrow$ **0.8927** (45K).
+- **Controlled Classical vs. Quantum Head Benchmarking:**
+  - Evaluated on identical 16D learned frozen latent spaces ($z \in \mathbb{R}^{16}$).
+  - Parameter-matched classical head (37 parameters) achieved **ROC-AUC = 0.8904** ($95\%\text{ CI: } [0.8805, 0.8994]$).
+  - Variational Quantum Classifiers (PennyLane statevector simulation on CPU, 4 qubits, depths $L=2, 4, 6$) achieved near-exact parity ($L=2$: **0.8923**, $L=4$: **0.8906**, $L=6$: **0.8903**).
+  - Statistically confirmed that classical and quantum heads are within overlapping uncertainty bounds (no quantum advantage claimed).
+- **Modality Ablation Study:** Completed 9-configuration ablation on standardized splits, confirming the primary discriminative dominance of S2 over S1 (`S2 Only` ROC-AUC = 0.8405 vs `S1 Only` = 0.6968) and the necessity of multimodal fusion for tail background rejection (SigEff @ 99.9% = 0.0184).
+- **Per-Class & Neutrino Fog Audit:** Identified key physical limitations in distinguishing nuclear recoils from Coherent Neutrino-Nucleus Scattering (CNNS), highlighting the 99-event sample constraint and 75% test misclassification rate.
+- **Scientific Audit Documentation:** Generated 12 formal technical reports in `research_audit/` and verified high-resolution publication figures in `figures/`.
+
+*Note: The project remains under active development. Additional research tasks—including hyperparameter sweeps, noise resilience on NISQ hardware, and manuscript finalization—are ongoing.*
 
 ---
 
@@ -792,27 +806,32 @@ Advanced experiments such as domain shift, real-data analysis, anomaly detection
 
 ---
 
-## 🔬 Project Status
+## 🔬 Project Status & Roadmap Tracking
 
 **Current Phase:**
 
 ```text
-[████░░░░░░░░░░░░░░░░] Physics + Dataset Preparation
+[██████████████░░░░░] Benchmarking & Experimental Verification (In Progress)
 ```
 
-**Current priorities:**
+**Implementation Status:**
 
-- [ ] Understand XENON detector physics
-- [ ] Download and inspect the public dataset
-- [ ] Analyze available event representations
-- [ ] Build dataset exploration notebook
-- [ ] Establish reproducible preprocessing
-- [ ] Select appropriate deep-learning architecture
-- [ ] Train first research model
-- [ ] Extract latent representation
-- [ ] Implement classical latent head
-- [ ] Implement quantum latent head
-- [ ] Begin controlled experiments
+- [x] Understand XENON detector physics & dual-phase TPC observables
+- [x] Download and inspect the curated simulated dataset (250,778 raw events)
+- [x] Analyze event representations (S1, S2, PMT top/bot arrays, 13D physics features)
+- [x] Build dataset exploration notebooks & verification scripts
+- [x] Establish reproducible, leak-free preprocessing & stratified splitting
+- [x] Design & train Multimodal Deep 1D-CNN architecture
+- [x] Extract compact 16D bottleneck latent representation ($z \in \mathbb{R}^{16}$)
+- [x] Implement parameter-matched classical inference head (37 params)
+- [x] Implement PennyLane Variational Quantum Classifiers (QNN $L=2, 4, 6$)
+- [x] Execute multi-scale empirical benchmarks (1.2K, 5.6K, 22.1K, and 45K events)
+- [x] Execute 9-configuration modality ablation study
+- [x] Perform 12-class detection breakdown & CNNS neutrino-fog audit
+- [x] Compute 1,000-sample bootstrap 95% confidence intervals & hypothesis testing
+- [x] Compile 12 comprehensive scientific research audit reports (`research_audit/`)
+- [ ] Hardware noise model evaluation & real NISQ backend experiments (Planned)
+- [ ] Manuscript table and figure updates for publication review (In Progress)
 
 ---
 
