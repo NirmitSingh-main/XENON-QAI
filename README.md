@@ -867,7 +867,7 @@ MIT License
 
 ---
 
-## 🧑‍🔬 Project
+
 
 **XENON-QAI**
 
